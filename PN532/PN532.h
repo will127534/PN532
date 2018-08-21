@@ -130,6 +130,7 @@ public:
     *           = 0     timeout
     *           < 0     failed
     */
+    int8_t SetParameters();
     int8_t tgInitAsTarget(uint16_t timeout = 0);
     int8_t tgInitAsTarget(const uint8_t* command, const uint8_t len, const uint16_t timeout = 0);
 

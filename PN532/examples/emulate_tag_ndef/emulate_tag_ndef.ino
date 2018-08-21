@@ -1,13 +1,13 @@
 
-#include "SPI.h"
-#include "PN532_SPI.h"
+#include "Wire.h"
+#include "PN532_I2C.h"
 #include "emulatetag.h"
 #include "NdefMessage.h"
 
-PN532_SPI pn532spi(SPI, 10);
-EmulateTag nfc(pn532spi);
+PN532_I2C pn532i2c(Wire);
+EmulateTag nfc(pn532i2c);
 
-uint8_t ndefBuf[120];
+uint8_t ndefBuf[250];
 NdefMessage message;
 int messageSize;
 
@@ -19,7 +19,8 @@ void setup()
   Serial.println("------- Emulate Tag --------");
   
   message = NdefMessage();
-  message.addUriRecord("http://www.seeedstudio.com");
+  message.addUriRecord("https://github.com/will127534/HITCON-Badge-2018");
+  message.addUriRecord("hitcon://pair?v=18&a=808c2257d778e5f1340d9325116f5a7273b33f5d&k=ce1f843391af38a1a93cae8c6439754c&s=1f7fd22b-bbeb-dd95-98ac-b9b75e971974&c=256f3a074babbb0940dc1c2751eccf05e12df5c12737e1d8");
   messageSize = message.getEncodedSize();
   if (messageSize > sizeof(ndefBuf)) {
       Serial.println("ndefBuf is too small");
@@ -41,29 +42,6 @@ void setup()
 }
 
 void loop(){
-    // uncomment for overriding ndef in case a write to this tag occured
-    //nfc.setNdefFile(ndefBuf, messageSize); 
-    
-    // start emulation (blocks)
     nfc.emulate();
-        
-    // or start emulation with timeout
-    /*if(!nfc.emulate(1000)){ // timeout 1 second
-      Serial.println("timed out");
-    }*/
-    
-    // deny writing to the tag
-    // nfc.setTagWriteable(false);
-    
-    if(nfc.writeOccured()){
-       Serial.println("\nWrite occured !");
-       uint8_t* tag_buf;
-       uint16_t length;
-       
-       nfc.getContent(&tag_buf, &length);
-       NdefMessage msg = NdefMessage(tag_buf, length);
-       msg.print();
-    }
-
-    delay(1000);
+    nfc.init();
 }

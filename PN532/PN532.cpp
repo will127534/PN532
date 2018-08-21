@@ -237,7 +237,7 @@ bool PN532::SAMConfig(void)
     pn532_packetbuffer[2] = 0x14; // timeout 50ms * 20 = 1 second
     pn532_packetbuffer[3] = 0x01; // use IRQ pin!
 
-    DMSG("SAMConfig\n");
+    //DMSG("SAMConfig\n");
 
     if (HAL(writeCommand)(pn532_packetbuffer, 4))
         return false;
@@ -757,11 +757,29 @@ bool PN532::inListPassiveTarget()
 
     return true;
 }
+int8_t PN532::SetParameters(){
+    pn532_packetbuffer[0] = PN532_COMMAND_SETPARAMETERS;
+    pn532_packetbuffer[1] = 0x30;
+    int8_t status = HAL(writeCommand)(pn532_packetbuffer, 2);
+    if (status < 0) {
+         DMSG("SetParameters failed on writeCommand\n");
+        return -1;
+    }
 
+    status = HAL(readResponse)(pn532_packetbuffer, sizeof(pn532_packetbuffer), 3000);
+    if (status > 0) {
+        return 1;
+    } else if (PN532_TIMEOUT == status) {
+        return 0;
+    } else {
+        return -2;
+    }
+}
 int8_t PN532::tgInitAsTarget(const uint8_t* command, const uint8_t len, const uint16_t timeout){
   
   int8_t status = HAL(writeCommand)(command, len);
     if (status < 0) {
+         DMSG("tgInitAsTarget failed on writeCommand\n");
         return -1;
     }
 
@@ -807,7 +825,7 @@ int16_t PN532::tgGetData(uint8_t *buf, uint8_t len)
         return -1;
     }
 
-    int16_t status = HAL(readResponse)(buf, len, 3000);
+    int16_t status = HAL(readResponse)(buf, len, 300);
     if (0 >= status) {
         return status;
     }
@@ -816,8 +834,10 @@ int16_t PN532::tgGetData(uint8_t *buf, uint8_t len)
 
 
     if (buf[0] != 0) {
-        DMSG("status is not ok\n");
-        return -5;
+        //DMSG("status err:");
+       // DMSG(buf[0],HEX);
+        //DMSG("\n");
+        return -1*buf[0];
     }
 
     for (uint8_t i = 0; i < length; i++) {
@@ -851,13 +871,13 @@ bool PN532::tgSetData(const uint8_t *header, uint8_t hlen, const uint8_t *body, 
     }
 
     if (0 > HAL(readResponse)(pn532_packetbuffer, sizeof(pn532_packetbuffer), 3000)) {
+
         return false;
     }
 
     if (0 != pn532_packetbuffer[0]) {
         return false;
     }
-
     return true;
 }
 
